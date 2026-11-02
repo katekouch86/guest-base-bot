@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+*.log
+.idea/
+export/
+export-gifs/
+google-oauth-client.json
+client_secret_*.json
+.import-state-*.json
+.DS_Store

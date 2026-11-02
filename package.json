@@ -1,0 +1,31 @@
+{
+  "name": "y-and-p-backup-bot",
+  "version": "1.0.0",
+  "description": "Telegram bot that backs up group posts (photos / videos + phone numbers) to Google Sheets and Google Drive",
+  "main": "dist/bot.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch src/bot.ts",
+    "build": "tsc",
+    "start": "node dist/bot.js",
+    "google:auth": "tsx src/scripts/googleAuth.ts",
+    "google:setup": "tsx src/scripts/googleSetup.ts",
+    "import": "tsx src/scripts/importExport.ts",
+    "fix:rows": "tsx src/scripts/fixRows.ts"
+  },
+  "dependencies": {
+    "@googleapis/drive": "^27.0.0",
+    "@googleapis/sheets": "^18.1.2",
+    "dotenv": "^18.0.9",
+    "google-auth-library": "^11.3.2",
+    "grammy": "^1.46.0",
+    "libphonenumber-js": "^1.13.15"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
