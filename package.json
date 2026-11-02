@@ -4,7 +4,7 @@
   "description": "Telegram bot that backs up group posts (photos / videos + phone numbers) to Google Sheets and Google Drive",
   "main": "dist/bot.js",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "dev": "tsx watch src/bot.ts",
