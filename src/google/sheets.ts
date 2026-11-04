@@ -115,10 +115,10 @@ export async function setupSpreadsheet(spreadsheetId: string, timeZone: string):
   const plain = { userEnteredFormat: { textFormat: { bold: false }, backgroundColor: { red: 1, green: 1, blue: 1 } } };
 
   const format: sheets_v4.Schema$Request[] = [
-    { repeatCell: { range: { sheetId: records.sheetId, startRowIndex: 1 }, cell: plain, fields: "userEnteredFormat(textFormat,backgroundColor)" } },
-    { repeatCell: { range: { sheetId: searchId, startRowIndex: 3 }, cell: plain, fields: "userEnteredFormat(textFormat,backgroundColor)" } },
-    { repeatCell: { range: { sheetId: records.sheetId, startRowIndex: 0, endRowIndex: 1 }, cell: bold, fields: "userEnteredFormat(textFormat,backgroundColor)" } },
-    { repeatCell: { range: { sheetId: searchId, startRowIndex: 2, endRowIndex: 3 }, cell: bold, fields: "userEnteredFormat(textFormat,backgroundColor)" } },
+    { repeatCell: { range: { sheetId: records.sheetId, startRowIndex: 1 }, cell: plain, fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.backgroundColor" } },
+    { repeatCell: { range: { sheetId: searchId, startRowIndex: 3 }, cell: plain, fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.backgroundColor" } },
+    { repeatCell: { range: { sheetId: records.sheetId, startRowIndex: 0, endRowIndex: 1 }, cell: bold, fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.backgroundColor" } },
+    { repeatCell: { range: { sheetId: searchId, startRowIndex: 2, endRowIndex: 3 }, cell: bold, fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.backgroundColor" } },
     { repeatCell: { range: { sheetId: records.sheetId, startRowIndex: 1 }, cell: wrap, fields: "userEnteredFormat(wrapStrategy,verticalAlignment)" } },
     { repeatCell: { range: { sheetId: searchId, startRowIndex: 3 }, cell: wrap, fields: "userEnteredFormat(wrapStrategy,verticalAlignment)" } },
     ...LINK_COLUMNS.map((index) => ({
