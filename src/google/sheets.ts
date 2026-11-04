@@ -21,8 +21,9 @@ const SEARCH_LAST_COLUMN = columnLetter(COLUMNS.indexOf("Post link"));
 const col = (name: (typeof COLUMNS)[number]) => `${RECORDS_SHEET}!${columnLetter(COLUMNS.indexOf(name))}:${columnLetter(COLUMNS.indexOf(name))}`;
 const MESSAGE_IDS = `${RECORDS_SHEET}!${MESSAGE_ID_LETTER}:${MESSAGE_ID_LETTER}`;
 
+// Sheets turns "+39 338..." typed into the box into the formula "=39 338...", so the formula text is used as the query.
 const SEARCH_FORMULA = `=ARRAYFORMULA(LET(
-  q, TRIM(B1),
+  q, TRIM(IF(ISFORMULA(B1), REGEXREPLACE(FORMULATEXT(B1), "^=\\+?", ""), B1 & "")),
   d, REGEXREPLACE(q, "\\D", ""),
   phoneHit, IF(LEN(d) >= 4, ISNUMBER(SEARCH(d, REGEXREPLACE(${col("Phone")} & "", "\\D", ""))), FALSE),
   textHit, ISNUMBER(SEARCH(q, ${col("Info")} & " " & ${col("Date")} & " " & ${col("Author")} & " " & ${col("Full post")})),
@@ -31,6 +32,8 @@ const SEARCH_FORMULA = `=ARRAYFORMULA(LET(
     IF(LEFT(found, 13) = "https://t.me/", HYPERLINK(found, "✈️ Telegram"),
       IF(LEFT(found, 8) = "https://", HYPERLINK(found, "📎 File"), found)))
 ))`;
+
+const PROTECTION_NOTE = "Y&P backup: managed by the bot";
 
 const LINK_COLUMNS = COLUMNS.flatMap((name, i) => (name.startsWith("Media") || name === "Post link" ? [i] : []));
 
@@ -98,6 +101,7 @@ export async function setupSpreadsheet(spreadsheetId: string, timeZone: string):
       data: [
         { range: `${RECORDS_SHEET}!A1:${LAST_COLUMN}1`, values: [[...COLUMNS]] },
         { range: `${SEARCH_SHEET}!A1`, values: [["🔍 Search: phone, name, date or any text →"]] },
+        { range: `${SEARCH_SHEET}!A2`, values: [["Type only in the yellow box. Results appear below."]] },
         { range: `${SEARCH_SHEET}!A3`, values: [[`={${RECORDS_SHEET}!A1:${SEARCH_LAST_COLUMN}1}`]] },
         { range: `${SEARCH_SHEET}!A4`, values: [[SEARCH_FORMULA]] },
       ],
@@ -150,7 +154,40 @@ export async function setupSpreadsheet(spreadsheetId: string, timeZone: string):
         fields: "userEnteredFormat.textFormat",
       },
     },
+    {
+      repeatCell: {
+        range: { sheetId: searchId, startRowIndex: 1, endRowIndex: 2 },
+        cell: { userEnteredFormat: { textFormat: { italic: true, foregroundColor: { red: 0.45, green: 0.45, blue: 0.45 } } } },
+        fields: "userEnteredFormat.textFormat",
+      },
+    },
   ];
+
+  const { data: protection } = await api.spreadsheets.get({ spreadsheetId, fields: "sheets(properties.sheetId,protectedRanges(description))" });
+  const isProtected = (sheetId: number | null | undefined) =>
+    protection.sheets!.some((s) => s.properties!.sheetId === sheetId && s.protectedRanges?.some((r) => r.description === PROTECTION_NOTE));
+
+  // Warning only: people can still edit after confirming, the bot writes through the API as the owner.
+  if (!isProtected(searchId)) {
+    format.push({
+      addProtectedRange: {
+        protectedRange: {
+          range: { sheetId: searchId },
+          unprotectedRanges: [{ sheetId: searchId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: 3 }],
+          description: PROTECTION_NOTE,
+          warningOnly: true,
+        },
+      },
+    });
+  }
+  if (!isProtected(records.sheetId)) {
+    for (const range of [
+      { sheetId: records.sheetId, startRowIndex: 0, endRowIndex: 1 },
+      { sheetId: records.sheetId, startColumnIndex: MESSAGE_ID_COLUMN, endColumnIndex: MESSAGE_ID_COLUMN + 1 },
+    ]) {
+      format.push({ addProtectedRange: { protectedRange: { range, description: PROTECTION_NOTE, warningOnly: true } } });
+    }
+  }
 
   for (const [name, width] of Object.entries(COLUMN_WIDTHS)) {
     const index = COLUMNS.indexOf(name as (typeof COLUMNS)[number]);
@@ -166,6 +203,7 @@ export async function setupSpreadsheet(spreadsheetId: string, timeZone: string):
     }
   }
 
+  await api.spreadsheets.values.batchClear({ spreadsheetId, requestBody: { ranges: [`${SEARCH_SHEET}!B1:C1`, `${SEARCH_SHEET}!B2:Z2`] } });
   await api.spreadsheets.batchUpdate({ spreadsheetId, requestBody: { requests: [{ unmergeCells: { range: { sheetId: searchId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 1, endColumnIndex: 3 } } }] } });
   await api.spreadsheets.batchUpdate({ spreadsheetId, requestBody: { requests: format } });
 }
